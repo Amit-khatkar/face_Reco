@@ -27,7 +27,7 @@ render(){
   return (
     <BrowserRouter>
       <Route path="/login" exact component={Login} />
-      <Route path="/dashboard" exact component={Dashboard} />
+      <Route path="/" exact component={Dashboard} />
     </BrowserRouter>
   );
 }
