@@ -31,7 +31,7 @@ export default class Dashboard extends Component {
         <div
           style={{
             alignItems: "center",
-            height: "100vh",
+            height: "90vh",
             width: "20vw",
             minWidth: '200px',
             display: "flex",
