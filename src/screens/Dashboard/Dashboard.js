@@ -73,6 +73,9 @@ export default class Dashboard extends Component {
         console.log("Upload is " + progress + "% done");
       },
       error => {
+        this.setState({
+          loading: false
+        });
         console.log(error);
       },
       () => {
@@ -145,7 +148,11 @@ export default class Dashboard extends Component {
           this.getFaceDataFromFirestore();
         }
       })
-      .catch(e => console.log(e));
+      .catch(e => {
+        this.setState({
+          loading: false
+        });
+        console.log(e)});
   }
 
   async getFaceDataFromFirestore() {
@@ -162,8 +169,12 @@ export default class Dashboard extends Component {
             faceIds.push(item.data().faceId);
           });
           this.checkMatchingFaceId(faceIds);
+        }else{
+          this.setState({
+            loading: false
+          });
         }
-      });
+      })
   }
 
   checkMatchingFaceId(faces) {
