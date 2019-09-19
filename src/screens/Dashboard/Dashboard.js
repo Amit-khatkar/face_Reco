@@ -1,12 +1,5 @@
 import React, { Component } from "react";
-import {
-  Container,
-  Nav,
-  Navbar,
-  Button,
-  Modal,
-  Spinner
-} from "react-bootstrap";
+import { Button, Modal, Spinner } from "react-bootstrap";
 import "react-html5-camera-photo/build/css/index.css";
 import firebase from "firebase";
 import Navigation from "../../components/Navigation";
@@ -27,11 +20,12 @@ export default class Dashboard extends Component {
       isCameraVisible: false,
       isLocked: true,
       faceId: "",
-      loading: false
+      loading: false,
+      uid: ""
     };
     this.onTakePhoto = this.onTakePhoto.bind(this);
     this.getFaceId = this.getFaceId.bind(this);
-    this.saveToFirebase = this.saveToFirebase.bind(this);
+    // this.saveToFirebase = this.saveToFirebase.bind(this);
     this.changeLockStatus = this.changeLockStatus.bind(this);
   }
 
@@ -41,6 +35,29 @@ export default class Dashboard extends Component {
     this.setState({ isCameraVisible: false, image: dataUri });
     this.uploadImageToFirestore(dataUri);
     // this.getFaceId(dataUri);
+  }
+
+  async componentDidMount() {
+    setTimeout(async () => {
+      if (firebase.apps.length) {
+        if (firebase.auth().currentUser != null) {
+          const uid = await firebase.auth().currentUser.uid;
+          this.setState({ uid });
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(uid.toString())
+            .onSnapshot(snap => {
+              if (snap.exists) {
+                const isLocked = snap.data().isLocked;
+                this.setState({ isLocked });
+              }
+            });
+        } else {
+          this.props.history.push("/login");
+        }
+      }
+    }, 1000);
   }
 
   uploadImageToFirestore = image => {
@@ -131,19 +148,8 @@ export default class Dashboard extends Component {
       .catch(e => console.log(e));
   }
 
-  async saveToFirebase(faceId) {
-    const uid = await firebase.auth().currentUser.uid;
-    firebase
-      .firestore()
-      .collection("users/" + uid + "/faces")
-      .add({
-        faceId: faceId
-      })
-      .then(s => console.log(s, "saved"));
-  }
-
   async getFaceDataFromFirestore() {
-    const uid = await firebase.auth().currentUser.uid;
+    const { uid } = this.state;
     firebase
       .firestore()
       .collection("users/" + uid + "/faces")
@@ -209,7 +215,7 @@ export default class Dashboard extends Component {
         console.log(resjson);
         if (resjson) {
           const isIdentical = resjson.isIdentical;
-          this.setState({loading: false, isLocked: false});
+          this.setState({ loading: false, isLocked: false });
           this.changeLockStatus(false);
           return isIdentical;
         } else {
@@ -219,11 +225,15 @@ export default class Dashboard extends Component {
       .catch(e => console.log(e));
   }
 
-  async changeLockStatus(isLocked){
-    const uid = await firebase.auth().currentUser.uid;
-    firebase.firestore().collection('users').doc(uid.toString()).update({
-      isLocked
-    });
+  async changeLockStatus(isLocked) {
+    const { uid } = this.state;
+    firebase
+      .firestore()
+      .collection("users")
+      .doc(uid.toString())
+      .update({
+        isLocked
+      });
   }
 
   render() {
@@ -274,12 +284,21 @@ export default class Dashboard extends Component {
           show={this.state.loading}
           onHide={() => this.setState({ loading: false })}
         >
-          <div style={{justifyContent: 'center', alignItems: 'center', width: '100%', display: 'flex', flexDirection: 'column', padding: 12 }}>
-          <img
-            src={this.state.image}
-            style={{ width: 80, height: 80, borderRadius: 40, margin: 12 }}
-          />
-          <Spinner animation="border" variant="primary" />
+          <div
+            style={{
+              justifyContent: "center",
+              alignItems: "center",
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              padding: 12
+            }}
+          >
+            <img
+              src={this.state.image}
+              style={{ width: 80, height: 80, borderRadius: 40, margin: 12 }}
+            />
+            <Spinner animation="border" variant="primary" />
           </div>
         </Modal>
       </>
