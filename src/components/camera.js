@@ -13,7 +13,7 @@ const CameraModal = props => {
       onHide={props.onHide}
     >
       <Modal.Body>
-        <Camera onTakePhoto={dataUri => props.onTake(dataUri)} />
+        <Camera imageCompression={1} onTakePhoto={dataUri => props.onTake(dataUri)} />
       </Modal.Body>
     </Modal>
   );
