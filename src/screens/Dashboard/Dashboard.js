@@ -165,7 +165,7 @@ export default class Dashboard extends Component {
         if (!snap.empty) {
           var faceIds = [];
           snap.docs.forEach(item => {
-            console.log(item);
+            console.log(item.data());
             faceIds.push(item.data().faceId);
           });
           this.checkMatchingFaceId(faceIds);
@@ -183,28 +183,31 @@ export default class Dashboard extends Component {
     let index = 0;
     if (faces.length > 0 && faceId) {
       faces.forEach(async item => {
-        if (loading && !isIdentical) {
-          isIdentical = await this.compareFaceIds(item, faceId);
-          if (isIdentical != null && isIdentical == true) {
-            // print('yes matched');
-            // addHistory("Success -> Successfully Unlocked");
-            // _showDialog("Match Found", 'Match Found yup!');
-            console.log("matched");
-            this.setState({
-              loading: false
-            });
-          } else {
-            if (index == faces.length) {
-              this.setState({
-                loading: false
-              });
-              console.log("no match found");
-              //  addHistory("Failed -> Verification Failed");
-              //  _showDialog("No Match Found", 'No match for this image');
-            }
-            // print('not mathced');
-          }
-        }
+
+          this.compareFaceIds(item, faceId).then((d)=>{
+            isIdentical = true;
+            console.log(d);
+           this.setState({ loading: false });
+           this.changeLockStatus(false);
+           index += 1;
+           }).catch(e => {
+             this.setState({ loading: false });
+             if(!isIdentical){
+              this.changeLockStatus(true);
+              index += 1;
+             }
+           }).finally(() => {
+             if(isIdentical){
+               if(index === faces.length){
+               alert("Unlocked");
+               }
+             }else{
+               if(index === faces.length){
+                 alert("No Match Found");
+                 }
+             }
+           })
+         
       });
     }
   }
@@ -212,8 +215,10 @@ export default class Dashboard extends Component {
   async compareFaceIds(faceId1, faceId2) {
     // print("running");
     const data = { faceId1: faceId1, faceId2: faceId2 };
+    console.log(data);
 
-    fetch(verifyfaceIdUrl, {
+    return new Promise((resolve, reject) => {
+      fetch(verifyfaceIdUrl, {
       method: "post",
       headers: {
         "Content-Type": "application/json",
@@ -226,14 +231,20 @@ export default class Dashboard extends Component {
         console.log(resjson);
         if (resjson) {
           const isIdentical = resjson.isIdentical;
+          if(isIdentical){
           this.setState({ loading: false, isLocked: false });
           this.changeLockStatus(false);
-          return isIdentical;
+          resolve(true);
+          }else{
+            reject(false);
+          }
         } else {
-          return false;
+          reject(false);
         }
+      }).catch(e => {
+        reject(false);
       })
-      .catch(e => console.log(e));
+    });
   }
 
   async changeLockStatus(isLocked) {
